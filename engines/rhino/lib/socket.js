@@ -1,4 +1,5 @@
 var IO = require("IO").IO;
+var EVENT_QUEUE = require("event-queue");
 
 var JSelectorProvider = Packages.java.nio.channels.spi.SelectorProvider.provider();
 var JAddress = Packages.java.net.InetSocketAddress;
@@ -93,7 +94,7 @@ StateSync.prototype = {
         var socket = this.socket;
         var observer = socket.__observer__;
         var selector = socket.__selector__;
-        //setTimeout(function() {
+        EVENT_QUEUE.enqueue(function stateCheck() {
             while(observer.selector().select()) {
                 var event, events = selector.selectedKeys().toArray().slice();
                 while (event = events.shift()) {
@@ -102,7 +103,7 @@ StateSync.prototype = {
                     }
                     if (event.isReadable()) {
                         print("socket:readable");
-                        socket.read(); // need to buffer
+                        print("socket:read> " + socket.read().decodeToString()); // need to buffer
                     }
                     if (event.isWritable()) {
                         print("socket:writable")
@@ -115,7 +116,8 @@ StateSync.prototype = {
                     }
                 }
             }
-            // sync();
-        //}, 10)
+            EVENT_QUEUE.enqueue(stateCheck);
+        });
+        EVENT_QUEUE.enterEventLoop();
     }
 };
