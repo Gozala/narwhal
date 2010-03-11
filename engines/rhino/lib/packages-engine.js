@@ -1,5 +1,6 @@
 
-// Kris Kowal
+// -- kriskowal Kris Kowal Copyright (C) 2009-2010 MIT License
+// -- tschaub
 
 var fs = require('./file');
 var system = require('./system');
@@ -60,7 +61,7 @@ exports.addJavaPaths = function addJavaPaths(javaPaths) {
     /* set up jar loader */
     var urls = Packages.java.lang.reflect.Array.newInstance(java.net.URL, javaPaths.length);
     for (var i = 0; i < javaPaths.length; i++) {
-        urls[i] = new Packages.java.net.URL('file://' + javaPaths[i]);
+        urls[i] = (new java.io.File(javaPaths[i])).toURL();
     };
     loader = new Packages.java.net.URLClassLoader(urls, loader);
 

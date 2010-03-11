@@ -1,4 +1,4 @@
-(function (modules) {
+(function narwhal(modules) {
 
 var deprecated;
 if (modules.fs) {
@@ -58,7 +58,6 @@ var requireFake = function(id, path, force) {
     var exports = modules[id] = modules[id] || {};
     var module = {id: id, path: path};
 
-
     var factory = system.evaluate(file.read(path), path, 1);
     factory({
         require: requireFake,
@@ -84,7 +83,6 @@ var fakeJoin = function() {
 var loader = requireFake("loader", fakeJoin(system.prefix, "lib", "loader.js"));
 var multiLoader = requireFake("loader/multi", fakeJoin(system.prefix, "lib", "loader", "multi.js"));
 var sandbox = requireFake("sandbox", fakeJoin(system.prefix, "lib", "sandbox.js"));
-
 // bootstrap file module
 requireFake("file", fakeJoin(system.prefix, "lib", "file-bootstrap.js"), "force");
 
@@ -128,9 +126,9 @@ try {
 }
 
 // load the complete system module
-require.force("system");
 require.force("file");
 require.force("file-engine");
+require.force("system");
 
 // augment the path search array with those provided in
 //  environment variables
@@ -141,6 +139,13 @@ paths.push.apply(paths, [
     return !!path;
 }));
 
+var OS = require("os");
+if (system.env.NARWHALOPT)
+    system.args.splice.apply(
+        system.args,
+        [1,0].concat(OS.parse(system.env.NARWHALOPT))
+    );
+
 // parse command line options
 var parser = require("narwhal").parser;
 var options = parser.parse(system.args);
@@ -150,6 +155,14 @@ var wasVerbose = system.verbose;
 if (options.verbose !== undefined) {
     system.verbose = options.verbose;
     require.verbose = system.verbose;
+}
+
+// if the engine provides an optimization level, like Rhino, call it through.
+if (system.setOptimizationLevel) {
+    if (system.env.NARWHAL_OPTIMIZATION !== undefined)
+        system.setOptimizationLevel(system.env.NARWHAL_OPTIMIZATION);
+    else
+        system.setOptimizationLevel(options.optimize);
 }
 
 if (deprecated) {
@@ -192,7 +205,8 @@ if (system.args.length && !options.interactive && !options.main) {
 // user package prefix
 if (system.env.SEA)
     system.prefixes.unshift(system.env.SEA);
-system.prefixes.unshift.apply(system.prefixes, options.prefixes);
+
+system.packages = options.packages;
 
 // load packages
 var packages;
